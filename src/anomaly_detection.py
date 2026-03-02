@@ -1,16 +1,13 @@
-import pandas as pd
+import numpy as np
 from sklearn.ensemble import IsolationForest
-import joblib
-import os
 
+class AnomalyDetector:
+    def __init__(self):
+        self.model = IsolationForest(n_estimators=100, contamination='auto')
 
-def detect_anomalies(df):
+    def fit(self, X):
+        self.model.fit(X)
 
-    model = IsolationForest(contamination=0.05, random_state=42)
-
-    df["anomaly"] = model.fit_predict(df[["total_spent", "risk_score"]])
-
-    os.makedirs("models", exist_ok=True)
-    joblib.dump(model, "models/anomaly_model.pkl")
-
-    return df
+    def predict(self, X):
+        predictions = self.model.predict(X)
+        return ['High-Risk' if pred == -1 else 'Low-Risk' for pred in predictions]
