@@ -1,10 +1,7 @@
 from sklearn.preprocessing import MinMaxScaler
 import pandas as pd
 
-
-def compute_risk_score(user_metrics):
-
-    scaler = MinMaxScaler()
+def calculate_risk_score(user_metrics, scaler):
 
     features_to_scale = [
         "credit_score",
@@ -13,7 +10,7 @@ def compute_risk_score(user_metrics):
         "employment_years"
     ]
 
-    scaled_values = scaler.fit_transform(user_metrics[features_to_scale])
+    scaled_values = scaler.transform(user_metrics[features_to_scale])
 
     scaled_df = pd.DataFrame(
         scaled_values,
@@ -31,4 +28,4 @@ def compute_risk_score(user_metrics):
 
     user_metrics["risk_score"] *= 100
 
-    return user_metrics, scaler
+    return user_metrics
