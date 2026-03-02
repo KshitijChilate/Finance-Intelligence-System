@@ -1,28 +1,21 @@
-import pandas as pd
+class FeatureEngineer:
+    def __init__(self, transactions):
+        self.transactions = transactions
 
+    def calculate_average_spending(self):
+        """Calculates average spending per category."""
+        average_spending = self.transactions.groupby('category')['amount'].mean()
+        return average_spending
 
-def create_user_metrics(users, transactions):
+    def identify_spending_trends(self):
+        """Identifies trends in spending over time."""
+        trends = self.transactions.groupby('date')['amount'].sum().pct_change()
+        return trends
 
-    user_metrics = (
-        transactions
-        .groupby("user_id")
-        .agg(
-            total_spent=("amount", "sum"),
-            avg_transaction=("amount", "mean"),
-            transaction_count=("amount", "count"),
-            spend_std=("amount", "std")
-        )
-        .reset_index()
-    )
-
-    user_metrics = user_metrics.merge(users, on="user_id")
-
-    user_metrics["income_expense_ratio"] = (
-        user_metrics["annual_income"] / user_metrics["total_spent"]
-    )
-
-    user_metrics["spend_per_transaction"] = (
-        user_metrics["total_spent"] / user_metrics["transaction_count"]
-    )
-
-    return user_metrics
+    def create_features(self):
+        """Creates behavioral spending features."""
+        features = {
+            'average_spending': self.calculate_average_spending(),
+            'trends': self.identify_spending_trends(),
+        }
+        return features
