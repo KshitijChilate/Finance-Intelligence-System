@@ -1,24 +1,16 @@
-# Virtual Environment
-venv/
-
-# Python cache
+# Python
 __pycache__/
-*.pyc
-
-# Jupyter Notebook checkpoints
-.ipynb_checkpoints/
-
-# Environment files
+*.py[cod]
+*.pyo
+*.pyd
+env/
+venv/
+ENV/
 .env
 
-# OS files
+# Project-specific ignores
+*.sqlite3
 .DS_Store
-Thumbs.db
-
-# Database files
-*.db
-
-# Logs
 *.log
-
-models/
+*.pot
+*.mo
