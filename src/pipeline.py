@@ -53,7 +53,7 @@ def run_pipeline(users_path, transactions_path):
     ]
 
     for _, row in user_metrics.iterrows():
-        transaction_df = row[model_features].to_frame().T in ["risk_label"]
+        transaction_df = row[model_features].to_frame().T 
 
 
         result = risk_engine.evaluate(transaction_df)
@@ -74,6 +74,13 @@ def run_pipeline(users_path, transactions_path):
     user_metrics = user_metrics.merge(risk_details_df, on="user_id", how="left")
 
     print("Pipeline execution completed successfully.")
+
+    os.makedirs("results", exist_ok=True)
+
+    output_path = "results/predictions.csv"
+    user_metrics.to_csv(output_path, index=False)
+
+    print(f"Results saved to {output_path}")
 
     return user_metrics
 

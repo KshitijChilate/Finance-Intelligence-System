@@ -11,3 +11,24 @@ class AnomalyDetector:
     def predict(self, X):
         predictions = self.model.predict(X)
         return ['High-Risk' if pred == -1 else 'Low-Risk' for pred in predictions]
+
+
+def detect_anomalies(user_metrics):
+
+    features = [
+        "total_spent",
+        "avg_transaction",
+        "transaction_count",
+        "spend_std"
+    ]
+
+    X = user_metrics[features]
+
+    detector = AnomalyDetector()
+    detector.fit(X)
+
+    predictions = detector.model.predict(X)
+
+    user_metrics["anomaly"] = [1 if p == -1 else 0 for p in predictions]
+
+    return user_metrics

@@ -21,3 +21,13 @@ class DataLoader:
             filtered_data = data[data[column_name] == value]
             return filtered_data
         return None
+
+
+# ✅ Add this function for the pipeline
+def load_data(users_path, transactions_path):
+    users = pd.read_csv(users_path)
+    transactions = pd.read_csv(transactions_path)
+
+    print("Users and transactions data loaded successfully.")
+
+    return users, transactions
