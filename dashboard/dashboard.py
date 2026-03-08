@@ -1,3 +1,4 @@
+import requests
 import shap
 import joblib
 import matplotlib.pyplot as plt
@@ -131,3 +132,41 @@ shap.plots.waterfall(
 )
 
 st.pyplot(fig)
+
+st.subheader("Real-Time Risk Prediction (API)")
+
+age = st.number_input("Age", 18, 100, 35)
+credit_score = st.number_input("Credit Score", 300, 900, 650)
+employment_years = st.number_input("Employment Years", 0, 40, 5)
+income_expense_ratio = st.number_input("Income Expense Ratio", 0.0, 2.0, 0.5)
+spend_std = st.number_input("Spending Std Dev", 0.0, 5000.0, 1000.0)
+annual_income = st.number_input("Annual Income", 0, 10000000, 1500000)
+total_spent = st.number_input("Total Spent", 0, 10000000, 800000)
+
+if st.button("Predict Risk"):
+
+    payload = {
+        "credit_score": credit_score,
+        "employment_years": employment_years,
+        "income_expense_ratio": income_expense_ratio,
+        "spend_std": spend_std,
+        "annual_income": annual_income,
+        "total_spent": total_spent
+    }
+
+    response = requests.post(
+        "http://127.0.0.1:8000/predict",
+        json=payload
+    )
+
+    result = response.json()
+
+    st.success("Prediction Complete")
+
+    col1, col2, col3 = st.columns(3)
+
+    col1.metric("Risk Score", round(result["risk_score"], 2))
+    col2.metric("Risk Tier", result["risk_tier"])
+    col3.metric("Cluster", result["cluster"])
+
+    st.write("Recommended Action:", result["recommended_action"])
