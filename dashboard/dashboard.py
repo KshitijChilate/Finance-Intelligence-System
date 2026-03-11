@@ -6,6 +6,10 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 
+# ===============================
+# Load Models
+# ===============================
+
 model = joblib.load("models/risk_model.pkl")
 explainer = shap.TreeExplainer(model)
 
@@ -13,8 +17,19 @@ st.set_page_config(page_title="Financial Intelligence Dashboard", layout="wide")
 
 st.title("💳 Financial Intelligence System Dashboard")
 
-# Load predictions
-data = pd.read_csv("results/predictions.csv")
+# ===============================
+# Load Prediction Results
+# ===============================
+
+try:
+    data = pd.read_csv("results/predictions.csv")
+except:
+    st.warning("Prediction results not found. Run pipeline first.")
+    st.stop()
+
+# ===============================
+# Sidebar Filters
+# ===============================
 
 st.sidebar.header("Filters")
 
@@ -26,19 +41,30 @@ risk_filter = st.sidebar.multiselect(
 
 filtered_data = data[data["risk_tier_y"].isin(risk_filter)]
 
-# KPIs
+# ===============================
+# KPI Metrics
+# ===============================
+
 col1, col2, col3 = st.columns(3)
 
 col1.metric("Total Customers", len(filtered_data))
+
 col2.metric(
     "High Risk Customers",
     len(filtered_data[filtered_data["risk_tier_y"] == "Critical"])
 )
-col3.metric("Anomalies Detected", filtered_data["anomaly"].sum())
+
+col3.metric(
+    "Anomalies Detected",
+    filtered_data["anomaly"].sum()
+)
 
 st.divider()
 
+# ===============================
 # Risk Distribution
+# ===============================
+
 st.subheader("Risk Tier Distribution")
 
 risk_counts = filtered_data["risk_tier_y"].value_counts().reset_index()
@@ -53,7 +79,10 @@ fig = px.bar(
 
 st.plotly_chart(fig, use_container_width=True)
 
+# ===============================
 # Customer Segmentation
+# ===============================
+
 st.subheader("Customer Segments")
 
 segment_counts = filtered_data["cluster"].value_counts().reset_index()
@@ -67,7 +96,10 @@ fig2 = px.pie(
 
 st.plotly_chart(fig2, use_container_width=True)
 
-# High Risk Customers
+# ===============================
+# High Risk Customers Table
+# ===============================
+
 st.subheader("High Risk Customers")
 
 high_risk = filtered_data[filtered_data["risk_tier_y"] == "Critical"]
@@ -78,16 +110,19 @@ st.dataframe(
     ].sort_values(by="risk_score_y", ascending=False)
 )
 
-# Anomaly Transactions
+# ===============================
+# Anomaly Detection
+# ===============================
+
 st.subheader("Anomaly Detection")
 
 anomalies = filtered_data[filtered_data["anomaly"] == 1]
 
 st.dataframe(anomalies.head(20))
 
-# =========================
+# ===============================
 # SHAP Explainability
-# =========================
+# ===============================
 
 st.subheader("Explain Customer Risk (SHAP)")
 
@@ -133,6 +168,11 @@ shap.plots.waterfall(
 
 st.pyplot(fig)
 
+# ===============================
+# Real-Time API Prediction
+# ===============================
+
+st.divider()
 st.subheader("Real-Time Risk Prediction (API)")
 
 age = st.number_input("Age", 18, 100, 35)
@@ -170,3 +210,65 @@ if st.button("Predict Risk"):
     col3.metric("Cluster", result["cluster"])
 
     st.write("Recommended Action:", result["recommended_action"])
+
+# ===============================
+# CSV Upload Insight Generator
+# ===============================
+
+st.divider()
+st.header("📂 Upload Customer Dataset for Automated Insights")
+
+uploaded_file = st.file_uploader(
+    "Upload a CSV file containing customer financial data",
+    type=["csv"]
+)
+
+if uploaded_file is not None:
+
+    uploaded_data = pd.read_csv(uploaded_file)
+
+    st.subheader("Dataset Preview")
+    st.dataframe(uploaded_data.head())
+
+    if st.button("Generate Insights"):
+
+        data_upload = uploaded_data.copy()
+
+        # Simple risk estimation
+        data_upload["risk_score"] = (
+            (1 - data_upload["credit_score"] / 850) * 50 +
+            data_upload["income_expense_ratio"] * 30 +
+            (data_upload["spend_std"] / data_upload["spend_std"].max()) * 20
+        )
+
+        # Risk tiers
+        data_upload["risk_tier"] = pd.cut(
+            data_upload["risk_score"],
+            bins=[-1, 40, 70, 100],
+            labels=["Low", "Medium", "High"]
+        )
+
+        st.success("Insights Generated Successfully")
+
+        st.subheader("Processed Dataset")
+        st.dataframe(data_upload)
+
+        # Risk Distribution
+        st.subheader("Risk Score Distribution")
+
+        fig3 = px.histogram(
+            data_upload,
+            x="risk_score",
+            nbins=20,
+            title="Risk Score Distribution"
+        )
+
+        st.plotly_chart(fig3, use_container_width=True)
+
+        # Insight summary
+        st.subheader("Key Insights")
+
+        high_risk_count = len(data_upload[data_upload["risk_tier"] == "High"])
+
+        st.write(f"High Risk Customers: {high_risk_count}")
+        st.write(f"Total Customers: {len(data_upload)}")
