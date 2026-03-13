@@ -15,6 +15,34 @@ st.set_page_config(page_title="Financial Intelligence Dashboard", layout="wide")
 st.title("💳 Financial Intelligence System Dashboard")
 
 # ===============================
+# Custom Styling
+# ===============================
+
+st.markdown("""
+<style>
+
+.metric-container {
+    background-color: #0E1117;
+    padding: 20px;
+    border-radius: 10px;
+    border: 1px solid #262730;
+}
+
+.metric-title {
+    font-size: 16px;
+    color: #9FA6B2;
+}
+
+.metric-value {
+    font-size: 28px;
+    font-weight: bold;
+    color: #00C897;
+}
+
+</style>
+""", unsafe_allow_html=True)
+
+# ===============================
 # Load Models
 # ===============================
 
@@ -60,7 +88,7 @@ tabs = st.tabs([
 ])
 
 # ===============================
-# Overview Tab
+# Overview
 # ===============================
 
 with tabs[0]:
@@ -69,17 +97,42 @@ with tabs[0]:
 
     col1, col2, col3 = st.columns(3)
 
-    col1.metric("Total Customers", len(filtered_data))
+    with col1:
+        st.markdown(
+            f"""
+            <div class="metric-container">
+            <div class="metric-title">Total Customers</div>
+            <div class="metric-value">{len(filtered_data)}</div>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
 
-    col2.metric(
-        "High Risk Customers",
-        len(filtered_data[filtered_data["risk_tier_y"] == "Critical"])
-    )
+    with col2:
+        high_risk = len(filtered_data[filtered_data["risk_tier_y"] == "Critical"])
 
-    col3.metric(
-        "Anomalies Detected",
-        filtered_data["anomaly"].sum()
-    )
+        st.markdown(
+            f"""
+            <div class="metric-container">
+            <div class="metric-title">High Risk Customers</div>
+            <div class="metric-value">{high_risk}</div>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+
+    with col3:
+        anomalies = filtered_data["anomaly"].sum()
+
+        st.markdown(
+            f"""
+            <div class="metric-container">
+            <div class="metric-title">Anomalies Detected</div>
+            <div class="metric-value">{anomalies}</div>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
 
     st.subheader("Risk Tier Distribution")
 
@@ -91,12 +144,21 @@ with tabs[0]:
         x="Risk Tier",
         y="Count",
         color="Risk Tier",
+        text="Count",
+        color_discrete_map={
+            "Low": "#00C897",
+            "Medium": "#FFC107",
+            "High": "#FF4B4B",
+            "Critical": "#D90429"
+        }
     )
+
+    fig.update_layout(template="plotly_dark", height=450)
 
     st.plotly_chart(fig, use_container_width=True)
 
 # ===============================
-# Risk Analysis Tab
+# Risk Analysis
 # ===============================
 
 with tabs[1]:
@@ -108,7 +170,8 @@ with tabs[1]:
     st.dataframe(
         high_risk[
             ["user_id", "risk_score_y", "recommended_action", "cluster"]
-        ].sort_values(by="risk_score_y", ascending=False)
+        ].sort_values(by="risk_score_y", ascending=False),
+        use_container_width=True
     )
 
 # ===============================
@@ -125,8 +188,11 @@ with tabs[2]:
     fig2 = px.pie(
         segment_counts,
         names="Segment",
-        values="Count"
+        values="Count",
+        hole=0.45
     )
+
+    fig2.update_layout(template="plotly_dark", height=450)
 
     st.plotly_chart(fig2, use_container_width=True)
 
@@ -140,7 +206,7 @@ with tabs[3]:
 
     anomalies = filtered_data[filtered_data["anomaly"] == 1]
 
-    st.dataframe(anomalies.head(20))
+    st.dataframe(anomalies.head(20), use_container_width=True)
 
 # ===============================
 # SHAP Explainability
@@ -193,7 +259,7 @@ with tabs[4]:
     st.pyplot(fig)
 
 # ===============================
-# Real-Time API Prediction
+# Real-Time Prediction
 # ===============================
 
 with tabs[5]:
@@ -219,26 +285,28 @@ with tabs[5]:
             "total_spent": total_spent
         }
 
-    try:
-        response = requests.post(
-            "http://127.0.0.1:8000/predict",
-            json=payload
-        )
+        try:
 
-        result = response.json()
+            response = requests.post(
+                "http://127.0.0.1:8000/predict",
+                json=payload
+            )
 
-        st.success("Prediction Complete")
+            result = response.json()
 
-        col1, col2, col3 = st.columns(3)
+            st.success("Prediction Complete")
 
-        col1.metric("Risk Score", round(result["risk_score"], 2))
-        col2.metric("Risk Tier", result["risk_tier"])
-        col3.metric("Cluster", result["cluster"])
+            col1, col2, col3 = st.columns(3)
 
-        st.write("Recommended Action:", result["recommended_action"])
+            col1.metric("Risk Score", round(result["risk_score"], 2))
+            col2.metric("Risk Tier", result["risk_tier"])
+            col3.metric("Cluster", result["cluster"])
 
-    except:
-        st.error("Prediction API is not running. Please start FastAPI server.")
+            st.write("Recommended Action:", result["recommended_action"])
+
+        except:
+
+            st.error("Prediction API is not running. Start FastAPI server.")
 
 # ===============================
 # CSV Upload Insights
@@ -258,7 +326,7 @@ with tabs[6]:
         uploaded_data = pd.read_csv(uploaded_file)
 
         st.subheader("Dataset Preview")
-        st.dataframe(uploaded_data.head())
+        st.dataframe(uploaded_data.head(), use_container_width=True)
 
         if st.button("Generate Insights"):
 
@@ -278,7 +346,25 @@ with tabs[6]:
 
             st.success("Insights Generated")
 
-            st.dataframe(data_upload)
+            st.dataframe(data_upload, use_container_width=True)
+
+            # Histogram
+            fig3 = px.histogram(
+                data_upload,
+                x="risk_score",
+                color="risk_tier",
+                template="plotly_dark"
+            )
+
+            st.plotly_chart(fig3, use_container_width=True)
+
+            # Insight summary
+            st.subheader("Key Insights")
+
+            high_risk_count = len(data_upload[data_upload["risk_tier"] == "High"])
+
+            st.write(f"Total Customers: {len(data_upload)}")
+            st.write(f"High Risk Customers: {high_risk_count}")
 
             csv = data_upload.to_csv(index=False).encode("utf-8")
 
